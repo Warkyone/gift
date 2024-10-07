@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>给小宝的礼物</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff; /* 白色背景 */
+            color: #333; /* 字体颜色 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333; /* 标题颜色 */
+            text-align: center; /* 标题居中 */
+        }
+
+        .audio-player {
+            width: 100%;
+            max-width: 400px; /* 最大宽度 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: #ddd; /* 进度条背景 */
+            border-radius: 5px;
+            position: relative;
+            margin-bottom: 20px;
+            cursor: pointer; /* 显示为可点击 */
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3); /* 内阴影效果 */
+        }
+
+        .progress {
+            height: 100%;
+            background-color: #4caf50; /* 进度条颜色 */
+            border-radius: 5px;
+            width: 0;
+            transition: width 0.2s;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .draggable-ball {
+            width: 16px;
+            height: 16px;
+            background-color: white; /* 小白球的颜色 */
+            border-radius: 50%;
+            position: absolute;
+            top: -3px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* 阴影效果 */
+            transition: left 0.1s; /* 平滑移动 */
+            pointer-events: none; /* 防止事件干扰 */
+        }
+
+        .play-pause-btn {
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            margin-top: 10px;
+            background-color: #ffffff; /* 按钮颜色 */
+            transition: background-color 0.3s ease;
+        }
+
+        .play-pause-btn:hover {
+            background-color: #ffffff; /* 鼠标悬停颜色 */
+        }
+
+        .icon {
+            width: 100%; /* 图标宽度 */
+            height: 100%; /* 图标高度 */
+            border-radius: 50%; /* 圆形图标 */
+            object-fit: cover; /* 裁剪图标 */
+        }
+
+        /* 时间显示样式 */
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 5px; /* 调整时间显示与进度条之间的间距 */
+            font-size: 14px; /* 字体大小 */
+            color: #333; /* 字体颜色 */
+        }
+
+        /* 适配手机端样式 */
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 20px; /* 调整标题字体大小 */
+            }
+
+            .play-pause-btn {
+                width: 50px;
+                height: 50px;
+            }
+
+            .draggable-ball {
+                width: 14px; /* 调整小球大小 */
+                height: 14px; /* 调整小球大小 */
+            }
+
+            .time-display {
+                font-size: 12px; /* 调整时间显示字体大小 */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1 id="audioTitle">《April Encounter》</h1>
+
+<div class="audio-player">
+    <div class="time-display">
+        <span id="currentTime">0:00</span>
+        <span id="durationTime">0:00</span>
+    </div>
+    <div class="progress-container" id="progressContainer" onclick="setProgress(event)">
+        <div class="progress" id="progress"></div>
+        <div class="draggable-ball" id="draggableBall"></div>
+    </div>
+    <audio id="audio" src="audio.mp3" preload="metadata"></audio> <!-- 指定音频文件路径 -->
+    <button class="play-pause-btn" id="playPauseBtn" onclick="togglePlayPause()">
+        <img src="play-icon.png" alt="播放" class="icon" id="playIcon" />
+        <img src="pause-icon.png" alt="暂停" class="icon" id="pauseIcon" style="display: none;" />
+    </button>
+</div>
+
+<script>
+    const audio = document.getElementById("audio");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+    const progress = document.getElementById("progress");
+    const audioTitle = document.getElementById("audioTitle");
+    const draggableBall = document.getElementById("draggableBall");
+    const progressContainer = document.getElementById("progressContainer");
+    const playIcon = document.getElementById("playIcon");
+    const pauseIcon = document.getElementById("pauseIcon");
+    const currentTimeDisplay = document.getElementById("currentTime");
+    const durationTimeDisplay = document.getElementById("durationTime");
+
+    // 更新总时长
+    audio.onloadedmetadata = function() {
+        const durationMinutes = Math.floor(audio.duration / 60);
+        const durationSeconds = Math.floor(audio.duration % 60);
+        durationTimeDisplay.textContent = `${durationMinutes}:${durationSeconds < 10 ? '0' + durationSeconds : durationSeconds}`;
+    };
+
+    // 切换播放和暂停状态
+    function togglePlayPause() {
+        if (audio.paused) {
+            audio.play();
+            playIcon.style.display = 'none'; // 隐藏播放图标
+            pauseIcon.style.display = 'block'; // 显示暂停图标
+        } else {
+            audio.pause();
+            playIcon.style.display = 'block'; // 显示播放图标
+            pauseIcon.style.display = 'none'; // 隐藏暂停图标
+        }
+    }
+
+    // 更新进度条
+    audio.ontimeupdate = function() {
+        const progressPercentage = (audio.currentTime / audio.duration) * 100;
+        progress.style.width = progressPercentage + '%';
+        updateBallPosition();
+        updateCurrentTimeDisplay();
+    };
+
+    // 更新当前时间显示
+    function updateCurrentTimeDisplay() {
+        const currentMinutes = Math.floor(audio.currentTime / 60);
+        const currentSeconds = Math.floor(audio.currentTime % 60);
+        currentTimeDisplay.textContent = `${currentMinutes}:${currentSeconds < 10 ? '0' + currentSeconds : currentSeconds}`;
+    }
+
+    // 设置进度条
+    function setProgress(event) {
+        const clickX = event.clientX - progressContainer.getBoundingClientRect().left;
+        const progressWidth = progressContainer.offsetWidth;
+        const percentage = clickX / progressWidth;
+        audio.currentTime = percentage * audio.duration;
+    }
+
+    // 更新小球位置
+    function updateBallPosition() {
+        const progressWidth = progressContainer.offsetWidth;
+        const progressPercentage = (audio.currentTime / audio.duration) * 100;
+        draggableBall.style.left = `calc(${progressPercentage}% - 8px)`; // 计算小球的位置
+    }
+
+    // 鼠标按下小球拖动
+    draggableBall.addEventListener('mousedown', function(event) {
+        const progressWidth = progressContainer.offsetWidth;
+
+        function onMouseMove(e) {
+            const clickX = e.clientX - progressContainer.getBoundingClientRect().left;
+            const percentage = Math.max(0, Math.min(1, clickX / progressWidth)); // 确保在范围内
+            audio.currentTime = percentage * audio.duration;
+            progress.style.width = `${percentage * 100}%`;
+            draggableBall.style.left = `calc(${percentage * 100}% - 8px)`; // 更新小球位置
+        }
+
+        function onMouseUp() {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // 音频播放结束时的处理
+    audio.onended = function() {
+        playIcon.style.display = 'block'; // 显示播放图标
+        pauseIcon.style.display = 'none'; // 隐藏暂停图标
+        progress.style.width = '0'; // 重置进度条
+        draggableBall.style.left = '0'; // 重置小球位置
+    };
+
+</script>
+
+</body>
+</html>
